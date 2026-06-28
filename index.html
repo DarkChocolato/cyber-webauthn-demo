@@ -194,7 +194,7 @@
                 
                 <div class="flow-explanation">
                     <p class="flow-desc-intro">
-                        ระบบยืนยันตัวตนไร้รหัสผ่าน FIDO2/WebAuthn จะทำงานในลักษณะของ <strong>Asymmetric Cryptography (การเข้ารหัสแบบสมมาตรแบบกุญแจคู่)</strong> โดยอุปกรณ์ของผู้ใช้จะเก็บกุญแจส่วนตัว (Private Key) ไว้ในชิปความปลอดภัยอย่างมิดชิด และระบบของเรา (ฐานข้อมูลจำลอง) จะเก็บเฉพาะกุญแจสาธารณะ (Public Key)
+                        ระบบยืนยันตัวตนไร้รหัสผ่าน FIDO2/WebAuthn จะทำงานในลักษณะของ <strong>Asymmetric Cryptography (การเข้ารหัสแบบไม่สมมาตรกุญแจคู่)</strong> โดยอุปกรณ์ของผู้ใช้จะเก็บกุญแจส่วนตัว (Private Key) ไว้ในชิปความปลอดภัยอย่างมิดชิด (Secure Enclave / TPM) และฐานข้อมูลจะเก็บเฉพาะกุญแจสาธารณะ (Public Key)
                     </p>
 
                     <!-- Mermaid Diagram -->
@@ -235,32 +235,107 @@ sequenceDiagram
                     </div>
 
                     <div class="flow-details-grid">
+                        <!-- Registration Timeline -->
                         <div class="flow-detail-col">
-                            <h4>🔑 1. ขั้นตอนลงทะเบียน (Registration)</h4>
-                            <ol>
-                                <li>ผู้ใช้ป้อนชื่อผู้ใช้และข้อมูลส่วนตัวในแบบฟอร์มสมัครสมาชิก</li>
-                                <li>ระบบตรวจสอบว่าชื่อผู้ใช้ไม่ซ้ำ แล้วสร้างรหัสท้าทาย (Challenge) แบบสุ่มเพื่อป้องกันการโจมตีซ้ำ (Replay Attack)</li>
-                                <li>เบราว์เซอร์เรียกใช้ <code>navigator.credentials.create()</code> เพื่อสั่งให้ชิปฮาร์ดแวร์ในอุปกรณ์สแกนนิ้วสร้างคู่กุญแจ</li>
-                                <li>ผู้ใช้ผ่านด่านสแกนลายนิ้วมือ/ใบหน้า หรือ PIN เพื่อยืนยันว่าเป็นเจ้าของเครื่องจริง</li>
-                                <li>ชิปความปลอดภัยภายในเครื่องจะส่ง <strong>Credential ID</strong> และกุญแจสาธารณะ (Public Key) กลับคืนมา</li>
-                                <li>เบราว์เซอร์บันทึกข้อมูลและเซฟลงใน <code>LocalStorage</code> เพื่อใช้เป็นฐานข้อมูลหลักจำลอง</li>
-                            </ol>
+                            <h4><i class="fa-solid fa-user-plus"></i> 1. ขั้นตอนลงทะเบียน (Registration)</h4>
+                            <div class="step-list">
+                                <div class="step-item">
+                                    <div class="step-number">1</div>
+                                    <div class="step-content">
+                                        <div class="step-title">ป้อนข้อมูลผู้ใช้</div>
+                                        <div class="step-desc">ผู้ใช้กรอกข้อมูล Username, ชื่อจริง, นามสกุล และเบอร์โทรศัพท์บนแบบฟอร์มให้ครบถ้วน</div>
+                                    </div>
+                                </div>
+                                <div class="step-item">
+                                    <div class="step-number">2</div>
+                                    <div class="step-content">
+                                        <div class="step-title">สร้างรหัสท้าทาย (Challenge)</div>
+                                        <div class="step-desc">ระบบตรวจสอบว่า Username ไม่ซ้ำ และสุ่มสร้างข้อมูลรหัสท้าทาย (Challenge) ขนาด 32 ไบนารีเพื่อใช้ตรวจสอบและป้องกันการโจมตีซ้ำ (Replay Attack)</div>
+                                    </div>
+                                </div>
+                                <div class="step-item">
+                                    <div class="step-number">3</div>
+                                    <div class="step-content">
+                                        <div class="step-title">เรียกใช้งาน WebAuthn API</div>
+                                        <div class="step-desc">เบราว์เซอร์สั่งทำงานคำสั่ง <code>navigator.credentials.create()</code> พร้อมส่งค่าตัวเลือกการสร้างกุญแจ FIDO2 ไปยังอุปกรณ์ของผู้ใช้</div>
+                                    </div>
+                                </div>
+                                <div class="step-item">
+                                    <div class="step-number">4</div>
+                                    <div class="step-content">
+                                        <div class="step-title">ยืนยันตัวตนบนอุปกรณ์</div>
+                                        <div class="step-desc">ระบบปฏิบัติการแสดงหน้าต่างแจ้งเตือนเพื่อขอสแกนนิ้วมือ (Fingerprint), ใบหน้า (Face ID) หรือป้อน PIN ของอุปกรณ์</div>
+                                    </div>
+                                </div>
+                                <div class="step-item">
+                                    <div class="step-number">5</div>
+                                    <div class="step-content">
+                                        <div class="step-title">ส่งคืนกุญแจสาธารณะ</div>
+                                        <div class="step-desc">เมื่อผู้ใช้สแกนผ่าน ชิปฮาร์ดแวร์ความปลอดภัยจะสร้างคู่กุญแจ และส่งข้อมูลกุญแจสาธารณะ (Public Key) และ <strong>Credential ID</strong> กลับมายังเบราว์เซอร์</div>
+                                    </div>
+                                </div>
+                                <div class="step-item">
+                                    <div class="step-number">6</div>
+                                    <div class="step-content">
+                                        <div class="step-title">เข้ารหัสและบันทึกข้อมูล</div>
+                                        <div class="step-desc">เบราว์เซอร์แปลงข้อมูลแบบ ArrayBuffer ให้กลายเป็น Base64URL เพื่อให้จัดเก็บโปรไฟล์และ Credential ID ลงใน <code>LocalStorage</code> ได้สำเร็จ</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+
+                        <!-- Authentication Timeline -->
                         <div class="flow-detail-col">
-                            <h4>🔓 2. ขั้นตอนเข้าสู่ระบบ (Authentication)</h4>
-                            <ol>
-                                <li>ผู้ใช้ป้อนชื่อผู้ใช้งาน (Username) ที่เคยสมัครไว้</li>
-                                <li>ระบบดึง Credential ID ที่เคยบันทึกไว้คู่กับบัญชีผู้ใช้ขึ้นมาจาก <code>LocalStorage</code></li>
-                                <li>ระบบสุ่มข้อมูล Challenge รอบใหม่ เพื่อความปลอดภัยและเป็นเอกลักษณ์ในเซสชันล็อกอินนั้น ๆ</li>
-                                <li>เบราว์เซอร์เรียกใช้ <code>navigator.credentials.get()</code> พร้อมระบุ Credential ID เพื่อระบุอุปกรณ์เป้าหมาย</li>
-                                <li>ผู้ใช้สแกนลายนิ้วมือ/ใบหน้า เพื่ออนุญาตให้ชิปความปลอดภัยลงลายมือชื่อดิจิทัล (Digital Signature) ลงบน Challenge</li>
-                                <li>ชิปส่งผลการลงลายมือชื่อกลับคืนมาให้เบราว์เซอร์ เพื่อยืนยันว่าสแกนผ่านและกุญแจถูกต้อง</li>
-                                <li>เบราว์เซอร์ยืนยันความสอดคล้อง ดึงข้อมูลชื่อ นามสกุล และเบอร์โทรศัพท์ของผู้ใช้ขึ้นแสดงในหน้าสำเร็จทันที</li>
-                            </ol>
+                            <h4><i class="fa-solid fa-key"></i> 2. ขั้นตอนเข้าสู่ระบบ (Authentication)</h4>
+                            <div class="step-list">
+                                <div class="step-item">
+                                    <div class="step-number">1</div>
+                                    <div class="step-content">
+                                        <div class="step-title">ป้อนชื่อผู้ใช้งาน</div>
+                                        <div class="step-desc">ผู้ใช้กรอกเฉพาะ Username ที่เคยใช้ลงทะเบียนเพื่อเข้าสู่ระบบไร้รหัสผ่าน</div>
+                                    </div>
+                                </div>
+                                <div class="step-item">
+                                    <div class="step-number">2</div>
+                                    <div class="step-content">
+                                        <div class="step-title">ดึงข้อมูล Credential ID</div>
+                                        <div class="step-desc">ระบบจำลองค้นหาโปรไฟล์ของ Username และดึงข้อมูล Credential ID ที่ลงทะเบียนไว้ขึ้นมาจาก <code>LocalStorage</code></div>
+                                    </div>
+                                </div>
+                                <div class="step-item">
+                                    <div class="step-number">3</div>
+                                    <div class="step-content">
+                                        <div class="step-title">สร้าง Challenge รอบใหม่</div>
+                                        <div class="step-desc">ระบบสุ่มสร้างข้อมูลรหัสท้าทาย (Challenge) ชุดใหม่ขึ้นมา เพื่อความปลอดภัยในรอบนั้น ๆ</div>
+                                    </div>
+                                </div>
+                                <div class="step-item">
+                                    <div class="step-number">4</div>
+                                    <div class="step-content">
+                                        <div class="step-title">เรียกสแกนนิ้วทวนสอบ</div>
+                                        <div class="step-desc">เบราว์เซอร์สั่งทำงานคำสั่ง <code>navigator.credentials.get()</code> โดยระบุ Credential ID ของผู้ใช้เพื่อให้ชิปความปลอดภัยเรียกทำงาน</div>
+                                    </div>
+                                </div>
+                                <div class="step-item">
+                                    <div class="step-number">5</div>
+                                    <div class="step-content">
+                                        <div class="step-title">ลงลายมือชื่อดิจิทัล</div>
+                                        <div class="step-desc">เมื่อผู้ใช้สแกนนิ้วผ่าน ชิปความปลอดภัยจะหยิบกุญแจส่วนตัว (Private Key) ในเครื่องมาเซ็นลายมือชื่อดิจิทัลกำกับข้อมูล Challenge แล้วส่งคืนเบราว์เซอร์</div>
+                                    </div>
+                                </div>
+                                <div class="step-item">
+                                    <div class="step-number">6</div>
+                                    <div class="step-content">
+                                        <div class="step-title">ตรวจสอบลายมือชื่อสำเร็จ</div>
+                                        <div class="step-desc">หน้าเว็บเบราว์เซอร์ตรวจสอบความสอดคล้องสำเร็จ แล้วดึงรายละเอียดชื่อ นามสกุล และเบอร์โทรศัพท์ไปแสดงบนหน้าล็อกอินสำเร็จทันที</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
+
 
             <!-- View 4: AI Prompts Log -->
             <section id="tab-logs" class="tab-content">
