@@ -795,3 +795,100 @@ body {
     padding-top: 12px;
     margin-top: 5px;
 }
+
+/* Flow Diagram Tab Styling */
+.flow-explanation {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.flow-desc-intro {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.diagram-box {
+    background: rgba(10, 14, 23, 0.8);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 20px;
+    overflow-x: auto;
+    display: flex;
+    justify-content: center;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.diagram-box pre {
+    width: 100%;
+}
+
+.flow-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+}
+
+@media (max-width: 650px) {
+    .flow-details-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+}
+
+.flow-detail-col {
+    background: rgba(255, 255, 255, 0.015);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 22px;
+}
+
+.flow-detail-col h4 {
+    font-family: var(--font-heading);
+    font-size: 1.05rem;
+    color: var(--accent-cyan);
+    margin-bottom: 15px;
+    border-bottom: 1px solid rgba(0, 242, 254, 0.2);
+    padding-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.flow-detail-col ol {
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.flow-detail-col ol li {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.flow-detail-col ol li code {
+    background: var(--input-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    color: #e2e8f0;
+    font-size: 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Adjust tab button layout for 4 items */
+@media (max-width: 600px) {
+    .nav-tabs {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    .tab-btn {
+        flex: 1 1 calc(50% - 5px);
+        font-size: 0.85rem;
+        padding: 10px 5px;
+    }
+}
+

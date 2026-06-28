@@ -12,6 +12,28 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Main Style -->
     <link rel="stylesheet" href="style.css">
+    <!-- Mermaid.js for Sequence Diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: 'dark',
+                securityLevel: 'loose',
+                themeVariables: {
+                    background: '#101726',
+                    primaryColor: '#00f2fe',
+                    primaryTextColor: '#ffffff',
+                    lineColor: '#94a3b8',
+                    actorBorder: '#00f2fe',
+                    actorBkg: '#101726',
+                    actorTextColor: '#ffffff',
+                    noteBkgColor: 'rgba(0, 242, 254, 0.1)',
+                    noteBorderColor: '#00f2fe'
+                }
+            });
+        });
+    </script>
 </head>
 <body>
     <div class="cyber-bg">
@@ -36,6 +58,9 @@
             </button>
             <button class="tab-btn" data-target="tab-reg" id="tabBtnReg">
                 <i class="fa-solid fa-user-plus"></i> สมัครสมาชิก (Register)
+            </button>
+            <button class="tab-btn" data-target="tab-flow" id="tabBtnFlow">
+                <i class="fa-solid fa-diagram-project"></i> ลำดับขั้นตอน (Flow)
             </button>
             <button class="tab-btn" data-target="tab-logs" id="tabBtnLogs">
                 <i class="fa-solid fa-code"></i> AI Prompts Log (ส่งงาน)
@@ -158,6 +183,83 @@
                 <button id="btnLogout" class="btn btn-danger">
                     <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
                 </button>
+            </section>
+
+            <!-- View 3.5: System Flow Diagram & Explanation -->
+            <section id="tab-flow" class="tab-content">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-diagram-project icon-header"></i> อธิบายการทำงานอย่างละเอียด (System Flow)</h2>
+                    <p class="card-subtitle">ไดอะแกรมและคำอธิบายขั้นตอนการลงทะเบียนและการเข้าสู่ระบบ FIDO2 / WebAuthn</p>
+                </div>
+                
+                <div class="flow-explanation">
+                    <p class="flow-desc-intro">
+                        ระบบยืนยันตัวตนไร้รหัสผ่าน FIDO2/WebAuthn จะทำงานในลักษณะของ <strong>Asymmetric Cryptography (การเข้ารหัสแบบสมมาตรแบบกุญแจคู่)</strong> โดยอุปกรณ์ของผู้ใช้จะเก็บกุญแจส่วนตัว (Private Key) ไว้ในชิปความปลอดภัยอย่างมิดชิด และระบบของเรา (ฐานข้อมูลจำลอง) จะเก็บเฉพาะกุญแจสาธารณะ (Public Key)
+                    </p>
+
+                    <!-- Mermaid Diagram -->
+                    <div class="diagram-box">
+                        <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor User as ผู้ใช้งาน
+    participant Browser as หน้าเว็บเบราว์เซอร์
+    participant WebAuthnAPI as WebAuthn API (เบราว์เซอร์)
+    participant LocalStorage as ฐานข้อมูลจำลอง (LocalStorage)
+
+    Note over User, LocalStorage: ขั้นตอนการลงทะเบียน (Registration)
+    User->>Browser: กรอก Username, ชื่อ, นามสกุล, เบอร์โทรศัพท์
+    Browser->>LocalStorage: ตรวจสอบความซ้ำซ้อนของ Username
+    LocalStorage-->>Browser: ไม่พบข้อมูล (สมัครใหม่ได้)
+    Browser->>Browser: สร้าง Challenge (สุ่มไบนารี)
+    Browser->>WebAuthnAPI: navigator.credentials.create(ตัวเลือก)
+    Note over WebAuthnAPI: อุปกรณ์เด้ง Pop-up สแกนนิ้ว / Face ID / PIN
+    User->>WebAuthnAPI: สแกนลายนิ้วมือ / ใบหน้ายืนยันตัวตน
+    WebAuthnAPI-->>Browser: คืนค่า PublicKeyCredential (และกุญแจสาธารณะ)
+    Browser->>Browser: แปลง ArrayBuffer เป็น Base64URL
+    Browser->>LocalStorage: บันทึกข้อมูลโปรไฟล์ + Credential ID
+    Browser-->>User: แสดงการสมัครสำเร็จ และสลับไปหน้าล็อกอิน
+
+    Note over User, LocalStorage: ขั้นตอนการเข้าสู่ระบบ (Authentication)
+    User->>Browser: กรอก Username ที่ลงทะเบียนไว้
+    Browser->>LocalStorage: ดึงข้อมูลประวัติผู้ใช้
+    LocalStorage-->>Browser: คืนค่าข้อมูลและ Credential ID ของผู้ใช้
+    Browser->>Browser: สร้าง Challenge ใหม่
+    Browser->>WebAuthnAPI: navigator.credentials.get(ตัวเลือก + Credential ID)
+    Note over WebAuthnAPI: อุปกรณ์เด้ง Pop-up สแกนนิ้วทวนสอบ
+    User->>WebAuthnAPI: สแกนลายนิ้วมือ / ใบหน้ายืนยันตัวตน
+    WebAuthnAPI-->>Browser: ยืนยันสำเร็จ คืนค่า Assertion ดิจิทัล
+    Browser->>Browser: ดึงข้อมูลโปรไฟล์ผู้ใช้ขึ้นมาแสดง
+    Browser-->>User: แสดงหน้า Dashboard เข้าสู่ระบบสำเร็จพร้อมข้อมูลเบอร์โทรศัพท์
+                        </pre>
+                    </div>
+
+                    <div class="flow-details-grid">
+                        <div class="flow-detail-col">
+                            <h4>🔑 1. ขั้นตอนลงทะเบียน (Registration)</h4>
+                            <ol>
+                                <li>ผู้ใช้ป้อนชื่อผู้ใช้และข้อมูลส่วนตัวในแบบฟอร์มสมัครสมาชิก</li>
+                                <li>ระบบตรวจสอบว่าชื่อผู้ใช้ไม่ซ้ำ แล้วสร้างรหัสท้าทาย (Challenge) แบบสุ่มเพื่อป้องกันการโจมตีซ้ำ (Replay Attack)</li>
+                                <li>เบราว์เซอร์เรียกใช้ <code>navigator.credentials.create()</code> เพื่อสั่งให้ชิปฮาร์ดแวร์ในอุปกรณ์สแกนนิ้วสร้างคู่กุญแจ</li>
+                                <li>ผู้ใช้ผ่านด่านสแกนลายนิ้วมือ/ใบหน้า หรือ PIN เพื่อยืนยันว่าเป็นเจ้าของเครื่องจริง</li>
+                                <li>ชิปความปลอดภัยภายในเครื่องจะส่ง <strong>Credential ID</strong> และกุญแจสาธารณะ (Public Key) กลับคืนมา</li>
+                                <li>เบราว์เซอร์บันทึกข้อมูลและเซฟลงใน <code>LocalStorage</code> เพื่อใช้เป็นฐานข้อมูลหลักจำลอง</li>
+                            </ol>
+                        </div>
+                        <div class="flow-detail-col">
+                            <h4>🔓 2. ขั้นตอนเข้าสู่ระบบ (Authentication)</h4>
+                            <ol>
+                                <li>ผู้ใช้ป้อนชื่อผู้ใช้งาน (Username) ที่เคยสมัครไว้</li>
+                                <li>ระบบดึง Credential ID ที่เคยบันทึกไว้คู่กับบัญชีผู้ใช้ขึ้นมาจาก <code>LocalStorage</code></li>
+                                <li>ระบบสุ่มข้อมูล Challenge รอบใหม่ เพื่อความปลอดภัยและเป็นเอกลักษณ์ในเซสชันล็อกอินนั้น ๆ</li>
+                                <li>เบราว์เซอร์เรียกใช้ <code>navigator.credentials.get()</code> พร้อมระบุ Credential ID เพื่อระบุอุปกรณ์เป้าหมาย</li>
+                                <li>ผู้ใช้สแกนลายนิ้วมือ/ใบหน้า เพื่ออนุญาตให้ชิปความปลอดภัยลงลายมือชื่อดิจิทัล (Digital Signature) ลงบน Challenge</li>
+                                <li>ชิปส่งผลการลงลายมือชื่อกลับคืนมาให้เบราว์เซอร์ เพื่อยืนยันว่าสแกนผ่านและกุญแจถูกต้อง</li>
+                                <li>เบราว์เซอร์ยืนยันความสอดคล้อง ดึงข้อมูลชื่อ นามสกุล และเบอร์โทรศัพท์ของผู้ใช้ขึ้นแสดงในหน้าสำเร็จทันที</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- View 4: AI Prompts Log -->
